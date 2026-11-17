@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>С Днём Рождения, Настюша ❤️</title>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #06030a;
+      font-family: 'Montserrat', sans-serif;
+      color: #fff;
+    }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #matrixCanvas { z-index: 1; transition: opacity 1.5s ease; }
+    #particleCanvas { z-index: 2; transition: opacity 1.2s ease; pointer-events: none; }
+    #spaceCanvas { z-index: 0; opacity: 0; transition: opacity 2s ease; }
+
+    /* Предупреждение о повороте экрана (только для мобильных) */
+    #orientationWarning {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      background: #06030a;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+    }
+    #orientationWarning svg {
+      width: 64px;
+      height: 64px;
+      fill: #ff4d94;
+      animation: rotatePhone 1.5s ease-in-out infinite;
+      margin-bottom: 20px;
+    }
+    #orientationWarning p {
+      font-family: 'Caveat', cursive;
+      font-size: 32px;
+      color: #ff99c2;
+      text-shadow: 0 0 12px #ff1a75;
+    }
+    @keyframes rotatePhone {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(-90deg); }
+    }
+
+    /* Кнопка музыки */
+    #musicBtn {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      z-index: 100;
+      background: rgba(255, 77, 148, 0.2);
+      border: 1.5px solid #ff4d94;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 0 15px rgba(255, 77, 148, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+    }
+    #musicBtn:hover {
+      background: rgba(255, 77, 148, 0.45);
+      transform: scale(1.05);
+    }
+
+    /* Стартовый экран */
+    #startOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      background: radial-gradient(circle at center, #1b0818 0%, #050208 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      transition: opacity 0.8s ease;
+    }
+    #startBtn {
+      background: linear-gradient(135deg, #ff3385, #ff75a0);
+      border: none;
+      color: white;
+      padding: 16px 36px;
+      font-size: 18px;
+      font-weight: 800;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 0 30px rgba(255, 51, 133, 0.7);
+      animation: pulseBtn 1.8s infinite;
+    }
+    @keyframes pulseBtn {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 25px rgba(255, 51, 133, 0.7); }
+      50% { transform: scale(1.06); box-shadow: 0 0 40px rgba(255, 51, 133, 1); }
+    }
+
+    /* Сцена 2: Милый мишка / стикер */
+    #stickerScene {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1s ease;
+    }
+    .bday-banner {
+      font-family: 'Caveat', cursive;
+      font-size: 46px;
+      color: #ff85b3;
+      text-shadow: 0 0 15px #ff2a85, 0 0 30px #ff2a85;
+      margin-bottom: 10px;
+      animation: floatY 2.5s ease-in-out infinite;
+    }
+    .cute-bear {
+      width: 190px;
+      height: 190px;
+      animation: bounceBear 1.2s ease-in-out infinite;
+    }
+    @keyframes floatY {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    @keyframes bounceBear {
+      0%, 100% { transform: translateY(0) rotate(-2deg); }
+      50% { transform: translateY(-12px) rotate(2deg); }
+    }
+
+    /* Сцена 3: 3D Книжка */
+    #bookScene {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1s ease;
+      perspective: 1600px;
+      padding: 15px;
+    }
+
+    .book-wrapper {
+      position: relative;
+      width: 310px;
+      height: 420px;
+      max-width: 90vw;
+      max-height: 72vh;
+      transform-style: preserve-3d;
+      transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+      cursor: pointer;
+    }
+
+    .book-page {
+      position: absolute;
+      inset: 0;
+      background: #fff9fb;
+      border-radius: 8px 18px 18px 8px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.65), inset 0 0 0 2px #ffd1e3;
+      transform-origin: left center;
+      transition: transform 0.9s cubic-bezier(0.645, 0.045, 0.355, 1);
+      backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 22px 18px;
+      color: #2c1320;
+      overflow: hidden;
+    }
+
+    .book-page::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 14px;
+      background: linear-gradient(to right, rgba(255, 105, 165, 0.35), transparent);
+    }
+
+    .cover-page {
+      background: linear-gradient(145deg, #ffffff 0%, #ffe6f0 100%);
+      justify-content: center;
+      text-align: center;
+      border: 3px solid #ff85b3;
+    }
+    .cover-title {
+      font-family: 'Caveat', cursive;
+      font-size: 38px;
+      color: #e60067;
+      margin-top: 15px;
+      line-height: 1.1;
+    }
+    .cover-sub {
+      font-size: 13px;
+      color: #8c4a67;
+      margin-top: 8px;
+      font-weight: 600;
+    }
+
+    .page-flipped {
+      transform: rotateY(-180deg);
+      pointer-events: none;
+    }
+
+    .typewriter-box {
+      width: 100%;
+      min-height: 64px;
+      background: #fff;
+      border: 1.5px solid #ffb3d1;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-family: 'Caveat', cursive;
+      font-size: 25px;
+      line-height: 1.2;
+      color: #c90057;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(255, 77, 148, 0.12);
+    }
+
+    .photo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+      flex: 1;
+      margin: 14px 0;
+    }
+
+    .photo-card {
+      width: 100%;
+      height: 100%;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 2.5px solid #ff66a3;
+      box-shadow: 0 5px 15px rgba(255, 51, 133, 0.25);
+      background: #ffe6f0;
+      position: relative;
+    }
+    .photo-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .tap-hint {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #ff99c2;
+      letter-spacing: 0.5px;
+      animation: pulseHint 1.5s infinite;
+    }
+    @keyframes pulseHint {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+
+    /* Сцена 4: Финальное сердце из фотографий */
+    #heartCollageScene {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1.2s ease;
+    }
+
+    #heartContainer {
+      position: relative;
+      width: 340px;
+      height: 340px;
+      animation: heartbeat 1.6s ease-in-out infinite;
+    }
+
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); }
+      14% { transform: scale(1.07); }
+      28% { transform: scale(1); }
+      42% { transform: scale(1.05); }
+      70% { transform: scale(1); }
+    }
+
+    .heart-photo {
+      position: absolute;
+      width: 58px;
+      height: 58px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 2px solid #ff4d94;
+      box-shadow: 0 0 14px #ff1a75, 0 0 28px rgba(255, 26, 117, 0.6);
+      transform: translate(-50%, -50%) scale(0);
+      transition: all 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
+      background: #2b0918;
+    }
+    .heart-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .final-caption {
+      position: fixed;
+      bottom: 34px;
+      width: 100%;
+      text-align: center;
+      font-family: 'Caveat', cursive;
+      font-size: 34px;
+      color: #ff99c2;
+      text-shadow: 0 0 15px #ff1a75;
+      opacity: 0;
+      transition: opacity 1.5s ease 1.5s;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Экран проверки поворота экрана -->
+  <div id="orientationWarning">
+    <svg viewBox="0 0 24 24">
+      <path d="M16.48 2h-8.96C6.39 2 5 3.39 5 5v14c0 1.61 1.39 3 2.52 3h8.96C17.61 22 19 20.61 19 19V5c0-1.61-1.39-3-2.52-3zM17 19H7V5h10v14z"/>
+    </svg>
+    <p>Пожалуйста, поверните телефон вертикально ❤️</p>
+  </div>
+
+  <!-- Стартовый экран -->
+  <div id="startOverlay">
+    <button id="startBtn">Открыть подарок для Настюши ❤️</button>
+  </div>
+
+  <!-- Кнопка музыки -->
+  <button id="musicBtn" style="display:none;">🎵 Музыка: ВКЛ</button>
+
+  <audio id="bgAudio" loop preload="auto">
+    <source src="music.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- Холсты -->
+  <canvas id="spaceCanvas"></canvas>
+  <canvas id="matrixCanvas"></canvas>
+  <canvas id="particleCanvas"></canvas>
+
+  <!-- Сцена 2: Милый мишка -->
+  <div id="stickerScene">
+    <div class="bday-banner">Happy Birthday! ✨</div>
+    <svg class="cute-bear" viewBox="0 0 200 200">
+      <circle cx="58" cy="52" r="22" fill="#fff" stroke="#ff85b3" stroke-width="4"/>
+      <circle cx="58" cy="52" r="11" fill="#ffb3d1"/>
+      <circle cx="142" cy="52" r="22" fill="#fff" stroke="#ff85b3" stroke-width="4"/>
+      <circle cx="142" cy="52" r="11" fill="#ffb3d1"/>
+      <ellipse cx="100" cy="95" rx="58" ry="50" fill="#fff" stroke="#ff85b3" stroke-width="4"/>
+      <polygon points="100,8 78,48 122,48" fill="#ff4d94"/>
+      <circle cx="100" cy="8" r="7" fill="#ffe066"/>
+      <circle cx="78" cy="90" r="5" fill="#2c1320"/>
+      <circle cx="122" cy="90" r="5" fill="#2c1320"/>
+      <ellipse cx="66" cy="102" rx="9" ry="5" fill="#ff99c2" opacity="0.7"/>
+      <ellipse cx="134" cy="102" rx="9" ry="5" fill="#ff99c2" opacity="0.7"/>
+      <ellipse cx="100" cy="99" rx="6" ry="4" fill="#ff4d94"/>
+      <path d="M 92 107 Q 100 115 108 107" stroke="#2c1320" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M100 168 C100 168 68 145 68 128 C68 118 78 112 88 118 C94 122 100 129 100 129 C100 129 106 122 112 118 C122 112 132 118 132 128 C132 145 100 168 100 168 Z" fill="#ff2a85"/>
+    </svg>
+  </div>
+
+  <!-- Сцена 3: 3D Книжка -->
+  <div id="bookScene">
+    <div class="book-wrapper" id="bookWrapper">
+      <div class="book-page" id="page3" style="z-index: 1;">
+        <div class="typewriter-box" id="text3"></div>
+        <div class="photo-grid">
+          <div class="photo-card"><img src="photo5.jpg" alt="Фото 5" onerror="this.src='https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=400&q=80'"></div>
+          <div class="photo-card"><img src="photo6.jpg" alt="Фото 6" onerror="this.src='https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=400&q=80'"></div>
+        </div>
+        <div style="font-size:12px; color:#b35982;">3 / 3</div>
+      </div>
+
+      <div class="book-page" id="page2" style="z-index: 2;">
+        <div class="typewriter-box" id="text2"></div>
+        <div class="photo-grid">
+          <div class="photo-card"><img src="photo3.jpg" alt="Фото 3" onerror="this.src='https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400&q=80'"></div>
+          <div class="photo-card"><img src="photo4.jpg" alt="Фото 4" onerror="this.src='https://images.unsplash.com/photo-1511895426328-dc8714191300?w=400&q=80'"></div>
+        </div>
+        <div style="font-size:12px; color:#b35982;">2 / 3</div>
+      </div>
+
+      <div class="book-page" id="page1" style="z-index: 3;">
+        <div class="typewriter-box" id="text1"></div>
+        <div class="photo-grid">
+          <div class="photo-card"><img src="photo1.jpg" alt="Фото 1" onerror="this.src='https://images.unsplash.com/photo-1518568814500-bf0f8d125f46?w=400&q=80'"></div>
+          <div class="photo-card"><img src="photo2.jpg" alt="Фото 2" onerror="this.src='https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80'"></div>
+        </div>
+        <div style="font-size:12px; color:#b35982;">1 / 3</div>
+      </div>
+
+      <div class="book-page cover-page" id="page0" style="z-index: 4;">
+        <svg width="110" height="110" viewBox="0 0 120 120">
+          <path d="M60 95 C60 95 20 68 20 42 C20 28 32 20 45 28 C53 33 60 42 60 42 C60 42 67 33 75 28 C88 20 100 28 100 42 C100 68 60 95 60 95 Z" fill="#ff3385"/>
+          <path d="M25 85 Q45 75 55 88 M95 85 Q75 75 65 88" stroke="#2c1320" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div class="cover-title">Для Настюши ❤️</div>
+        <div class="cover-sub">Нажми, чтобы открыть</div>
+      </div>
+    </div>
+    <div class="tap-hint" id="bookHint">Нажми на книжку, чтобы открыть ✨</div>
+  </div>
+
+  <!-- Сцена 4: Финальное сердце -->
+  <div id="heartCollageScene">
+    <div id="heartContainer"></div>
+    <div class="final-caption" id="finalCaption">С 17-летием, моя бусина! ❤️</div>
+  </div>
+
+  <script>
+    // ==========================================
+    // ПРОВЕРКА ПОВОРОТА ЭКРАНА
+    // ==========================================
+    function checkOrientation() {
+      const warning = document.getElementById('orientationWarning');
+      if (window.innerWidth < 1024 && window.innerWidth > window.innerHeight) {
+        warning.style.display = 'flex';
+      } else {
+        warning.style.display = 'none';
+      }
+    }
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    checkOrientation();
+
+    // ==========================================
+    // НАСТРОЙКИ
+    // ==========================================
+    const MATRIX_WORDS = ["3", "2", "1", "С ДНЁМ", "РОЖДЕНИЯ", "НАСТЮША", "HEART"];
+
+    const BOOK_MESSAGES = [
+      "С днём рождения бусина❤️",
+      "Люблю тебя от луны и обратно",
+      "Она семнадцатилетняяяя😊"
+    ];
+
+    const HEART_PHOTOS = [
+      "photo1.jpg", "photo2.jpg", "photo3.jpg", "photo4.jpg", "photo5.jpg", "photo6.jpg",
+      "photo1.jpg", "photo2.jpg", "photo3.jpg", "photo4.jpg", "photo5.jpg", "photo6.jpg"
+    ];
+
+    const FALLBACK_PHOTOS = [
+      "https://images.unsplash.com/photo-1518568814500-bf0f8d125f46?w=300&q=80",
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&q=80",
+      "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=300&q=80",
+      "https://images.unsplash.com/photo-1511895426328-dc8714191300?w=300&q=80",
+      "https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=300&q=80",
+      "https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=300&q=80"
+    ];
+
+    // ==========================================
+    // АУДИО
+    // ==========================================
+    const bgAudio = document.getElementById('bgAudio');
+    const musicBtn = document.getElementById('musicBtn');
+    let audioCtx = null;
+    let isMusicPlaying = false;
+    let synthInterval = null;
+
+    function startSynthMelody() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const notes = [
+        261.63, 261.63, 293.66, 261.63, 349.23, 329.63,
+        261.63, 261.63, 293.66, 261.63, 392.00, 349.23,
+        261.63, 261.63, 523.25, 440.00, 349.23, 329.63, 293.66,
+        466.16, 466.16, 440.00, 349.23, 392.00, 349.23
+      ];
+      let idx = 0;
+      const playNote = () => {
+        if (!isMusicPlaying) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = notes[idx % notes.length];
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.55);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.6);
+        idx++;
+      };
+      playNote();
+      synthInterval = setInterval(playNote, 600);
+    }
+
+    function toggleMusic(forcePlay = false) {
+      if (forcePlay || !isMusicPlaying) {
+        isMusicPlaying = true;
+        musicBtn.textContent = "🎵 Музыка: ВКЛ";
+        bgAudio.play().catch(() => {
+          if (!synthInterval) startSynthMelody();
+        });
+      } else {
+        isMusicPlaying = false;
+        musicBtn.textContent = "🔇 Музыка: ВЫКЛ";
+        bgAudio.pause();
+        if (synthInterval) {
+          clearInterval(synthInterval);
+          synthInterval = null;
+        }
+      }
+    }
+
+    musicBtn.addEventListener('click', () => toggleMusic(false));
+
+    // ==========================================
+    // МАТРИЦА И ЧАСТИЦЫ
+    // ==========================================
+    const mCanvas = document.getElementById('matrixCanvas');
+    const mCtx = mCanvas.getContext('2d');
+    const pCanvas = document.getElementById('particleCanvas');
+    const pCtx = pCanvas.getContext('2d');
+    const sCanvas = document.getElementById('spaceCanvas');
+    const sCtx = sCanvas.getContext('2d');
+
+    let W, H;
+    function resize() {
+      W = mCanvas.width = pCanvas.width = sCanvas.width = window.innerWidth;
+      H = mCanvas.height = pCanvas.height = sCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const chars = "НАСТЮША❤17LOVE★☆01";
+    const fontSize = 16;
+    let columns = Math.floor(W / fontSize);
+    let drops = Array(columns).fill(1);
+
+    function drawMatrix() {
+      mCtx.fillStyle = "rgba(6, 3, 10, 0.15)";
+      mCtx.fillRect(0, 0, W, H);
+      mCtx.fillStyle = "#ff4d94";
+      mCtx.font = fontSize + "px monospace";
+
+      for (let i = 0; i < drops.length; i++) {
+        const text = chars[Math.floor(Math.random() * chars.length)];
+        mCtx.fillText(text, i * fontSize, drops[i] * fontSize);
+        if (drops[i] * fontSize > H && Math.random() > 0.95) drops[i] = 0;
+        drops[i] += 1.8;
+      }
+    }
+
+    let particles = [];
+    const PARTICLE_COUNT = 950;
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        tx: Math.random() * W,
+        ty: Math.random() * H,
+        vx: 0,
+        vy: 0,
+        size: Math.random() * 2.4 + 1.2
+      });
+    }
+
+    function getTargetPoints(word) {
+      const off = document.createElement('canvas');
+      off.width = W;
+      off.height = H;
+      const oCtx = off.getContext('2d');
+      oCtx.fillStyle = "#fff";
+
+      if (word === "HEART") {
+        const scale = Math.min(W, H) / 36;
+        oCtx.beginPath();
+        for (let t = 0; t <= Math.PI * 2; t += 0.02) {
+          const hx = 16 * Math.pow(Math.sin(t), 3);
+          const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+          const px = W / 2 + hx * scale;
+          const py = H / 2 + hy * scale;
+          if (t === 0) oCtx.moveTo(px, py);
+          else oCtx.lineTo(px, py);
+        }
+        oCtx.fill();
+      } else {
+        const fSize = Math.min(W / (word.length * 0.72), 130);
+        oCtx.font = `800 ${fSize}px Montserrat, sans-serif`;
+        oCtx.textAlign = "center";
+        oCtx.textBaseline = "middle";
+        oCtx.fillText(word, W / 2, H / 2);
+      }
+
+      const data = oCtx.getImageData(0, 0, W, H).data;
+      const pts = [];
+      const step = 6;
+      for (let y = 0; y < H; y += step) {
+        for (let x = 0; x < W; x += step) {
+          if (data[(y * W + x) * 4 + 3] > 128) {
+            pts.push({ x, y });
+          }
+        }
+      }
+      return pts;
+    }
+
+    function morphToWord(word) {
+      const pts = getTargetPoints(word);
+      if (pts.length === 0) return;
+      particles.forEach((p, i) => {
+        const target = pts[i % pts.length];
+        p.tx = target.x + (Math.random() - 0.5) * 3;
+        p.ty = target.y + (Math.random() - 0.5) * 3;
+      });
+    }
+
+    function updateParticles() {
+      pCtx.clearRect(0, 0, W, H);
+      pCtx.fillStyle = "#ff85b3";
+      pCtx.shadowColor = "#ff1a75";
+      pCtx.shadowBlur = 10;
+
+      particles.forEach(p => {
+        p.x += (p.tx - p.x) * 0.18;
+        p.y += (p.ty - p.y) * 0.18;
+        pCtx.beginPath();
+        pCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        pCtx.fill();
+      });
+    }
+
+    // ==========================================
+    // ЗВЁЗДНОЕ НЕБО (УВЕЛИЧЕНО КОЛИЧЕСТВО ЗВЁЗД И СЕРДЕЧЕК)
+    // ==========================================
+    const stars = Array.from({ length: 220 }, () => ({
+      x: Math.random() * 2500,
+      y: Math.random() * 2500,
+      r: Math.random() * 1.8 + 0.4,
+      a: Math.random()
+    }));
+
+    const floatingHearts = Array.from({ length: 32 }, () => ({
+      x: Math.random() * W,
+      y: H + Math.random() * 500,
+      speed: Math.random() * 1.4 + 0.7,
+      size: Math.random() * 16 + 10,
+      drift: Math.random() * 2
+    }));
+
+    function drawSpace() {
+      sCtx.fillStyle = "#07030d";
+      sCtx.fillRect(0, 0, W, H);
+
+      stars.forEach(s => {
+        s.a += 0.03;
+        sCtx.fillStyle = `rgba(255, 220, 240, ${0.3 + Math.abs(Math.sin(s.a)) * 0.7})`;
+        sCtx.beginPath();
+        sCtx.arc(s.x % W, s.y % H, s.r, 0, Math.PI * 2);
+        sCtx.fill();
+      });
+
+      floatingHearts.forEach(h => {
+        h.y -= h.speed;
+        h.x += Math.sin(h.y * 0.02) * 0.7;
+        if (h.y < -30) {
+          h.y = H + 30;
+          h.x = Math.random() * W;
+        }
+        sCtx.font = `${h.size}px Arial`;
+        sCtx.fillStyle = "rgba(255, 77, 148, 0.65)";
+        sCtx.fillText("❤", h.x, h.y);
+      });
+    }
+
+    // ==========================================
+    // 3D-КНИЖКА
+    // ==========================================
+    let currentPage = 0;
+    const bookWrapper = document.getElementById('bookWrapper');
+    const bookHint = document.getElementById('bookHint');
+
+    function typeWriter(elementId, text) {
+      const el = document.getElementById(elementId);
+      el.textContent = "";
+      let i = 0;
+      const timer = setInterval(() => {
+        el.textContent += text.charAt(i);
+        i++;
+        if (i >= text.length) clearInterval(timer);
+      }, 55);
+    }
+
+    bookWrapper.addEventListener('click', () => {
+      if (currentPage === 0) {
+        document.getElementById('page0').classList.add('page-flipped');
+        typeWriter('text1', BOOK_MESSAGES[0]);
+        bookHint.textContent = "Нажми, чтобы перелистнуть страницу 👉";
+        currentPage = 1;
+      } else if (currentPage === 1) {
+        document.getElementById('page1').classList.add('page-flipped');
+        typeWriter('text2', BOOK_MESSAGES[1]);
+        currentPage = 2;
+      } else if (currentPage === 2) {
+        document.getElementById('page2').classList.add('page-flipped');
+        typeWriter('text3', BOOK_MESSAGES[2]);
+        bookHint.textContent = "Нажми ещё раз, чтобы увидеть сюрприз ❤️";
+        currentPage = 3;
+      } else if (currentPage === 3) {
+        document.getElementById('bookScene').style.opacity = '0';
+        document.getElementById('bookScene').style.pointerEvents = 'none';
+        setTimeout(showHeartCollage, 600);
+        currentPage = 4;
+      }
+    });
+
+    // ==========================================
+    // ФИНАЛЬНОЕ СЕРДЦЕ
+    // ==========================================
+    function showHeartCollage() {
+      const scene = document.getElementById('heartCollageScene');
+      const container = document.getElementById('heartContainer');
+      scene.style.opacity = '1';
+
+      const total = HEART_PHOTOS.length;
+      const cx = 170;
+      const cy = 165;
+      const scale = 9.2;
+
+      HEART_PHOTOS.forEach((src, i) => {
+        const t = (Math.PI * 2 * i) / total;
+        const hx = 16 * Math.pow(Math.sin(t), 3);
+        const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+
+        const card = document.createElement('div');
+        card.className = 'heart-photo';
+        card.style.left = `${cx}px`;
+        card.style.top = `${cy}px`;
+
+        const img = document.createElement('img');
+        img.src = src;
+        img.onerror = () => { img.src = FALLBACK_PHOTOS[i % FALLBACK_PHOTOS.length]; };
+        card.appendChild(img);
+        container.appendChild(card);
+
+        setTimeout(() => {
+          card.style.left = `${cx + hx * scale}px`;
+          card.style.top = `${cy + hy * scale}px`;
+          card.style.transform = `translate(-50%, -50%) scale(1)`;
+        }, 120 * i + 100);
+      });
+
+      document.getElementById('finalCaption').style.opacity = '1';
+    }
+
+    // ==========================================
+    // ЗАПУСК СЦЕНАРИЯ
+    // ==========================================
+    let matrixTimer, particleTimer, spaceTimer;
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+      document.getElementById('startOverlay').style.opacity = '0';
+      setTimeout(() => document.getElementById('startOverlay').style.display = 'none', 800);
+
+      musicBtn.style.display = 'flex';
+      toggleMusic(true);
+
+      matrixTimer = setInterval(drawMatrix, 30);
+      particleTimer = setInterval(updateParticles, 25);
+
+      let step = 0;
+      morphToWord(MATRIX_WORDS[0]);
+
+      const wordInterval = setInterval(() => {
+        step++;
+        if (step < MATRIX_WORDS.length) {
+          morphToWord(MATRIX_WORDS[step]);
+        } else {
+          clearInterval(wordInterval);
+          mCanvas.style.opacity = '0';
+          pCanvas.style.opacity = '0';
+          sCanvas.style.opacity = '1';
+          spaceTimer = setInterval(drawSpace, 30);
+
+          setTimeout(() => {
+            clearInterval(matrixTimer);
+            clearInterval(particleTimer);
+            const sticker = document.getElementById('stickerScene');
+            sticker.style.opacity = '1';
+
+            setTimeout(() => {
+              sticker.style.opacity = '0';
+              setTimeout(() => {
+                const book = document.getElementById('bookScene');
+                book.style.opacity = '1';
+                book.style.pointerEvents = 'auto';
+              }, 800);
+            }, 3200);
+          }, 900);
+        }
+      }, 1050);
+    });
+  </script>
+</body>
+</html>
